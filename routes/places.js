@@ -14,7 +14,6 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
     const { data } = await axios.get(
       `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${query}&key=${key}`
     );
-    console.log(data);
     const returnedData = data.results.map(async (item) => {
       const {
         name,
@@ -117,7 +116,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
       website,
     } = data.result;
 
-    const infos = await enrichPlace(req.params.id);
+    const infos = await enrichPlace(id);
 
     res.json({
       name: name,
@@ -155,12 +154,6 @@ router.post("/:id", isLoggedIn, (req, res, next) => {
       console.log("error");
       res.json(err);
     });
-  //   res.json({ message: "you created new infos" });
-});
-
-//delete the infos from the place
-router.delete("/:id", isLoggedIn, (req, res, next) => {
-  res.json({ message: "you deleted infos" });
 });
 
 module.exports = router;
