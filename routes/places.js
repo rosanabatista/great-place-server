@@ -184,6 +184,7 @@ router.post(
       body,
       place_id: req.params.id,
       author: req.user._id,
+      picture: req.file.path,
     }).then((newComment) => {
       res.json({ message: "comment added" });
     });
