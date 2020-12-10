@@ -5,6 +5,18 @@ const router = require("express").Router();
 const key = process.env.GOOGLE_API_KEY;
 const axios = require("axios");
 const Check = require("../models/CheckModel");
+const Comment = require("../models/Comment.model");
+
+//cloudinary configuration
+const multer = require("multer");
+const cloudinary = require("cloudinary");
+const multerStorageCloudinary = require("multer-storage-cloudinary");
+
+const storage = new multerStorageCloudinary.CloudinaryStorage({
+  cloudinary: cloudinary.v2,
+});
+
+const upload = multer({ storage });
 
 //search the places
 router.get("/search", isLoggedIn, async (req, res, next) => {
@@ -118,6 +130,8 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
 
     const infos = await enrichPlace(id);
 
+    const comments = await Comment.find({ place_id: id });
+
     res.json({
       name: name,
       address: formatted_address,
@@ -126,6 +140,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
       opening_hours: opening_hours,
       website: website,
       infos: infos,
+      comments: comments,
     });
   } catch (err) {
     next(err);
@@ -140,20 +155,39 @@ router.post("/:id", isLoggedIn, (req, res, next) => {
       if (!result) {
         Check.create(Object.assign({ place_id: req.params.id }, req.body));
         res.json({ message: "you created new infos" });
+      } else {
+        Check.findOneAndUpdate({ place_id: req.params.id }, req.body)
+          .then((result) => {
+            res.json({ message: "you updated new infos" });
+          })
+          .catch((err) => {
+            console.log("error");
+            res.json(err);
+          });
       }
-      Check.findOneAndUpdate({ place_id: req.params.id }, req.body)
-        .then((result) => {
-          res.json({ message: "you updated new infos" });
-        })
-        .catch((err) => {
-          console.log("error");
-          res.json(err);
-        });
     })
     .catch((err) => {
       console.log("error");
       res.json(err);
     });
 });
+
+// add comments
+router.post(
+  "/:id/new-comment",
+  isLoggedIn,
+  upload.single("comment-image"),
+  (req, res, next) => {
+    console.log(req.file.path);
+    const { body } = req.body;
+    Comment.create({
+      body,
+      place_id: req.params.id,
+      author: req.user._id,
+    }).then((newComment) => {
+      res.json({ message: "comment added" });
+    });
+  }
+);
 
 module.exports = router;

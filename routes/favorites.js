@@ -58,7 +58,27 @@ async function enrichPlace(place_id) {
     breastfeeding,
   } = result);
 }
-
+/*
+  map(favorites => axios.get( `https://maps.googleapis.com/maps/api/place/details/json?place_id=${favorite}&key=${key}`).then(({data}) =>{
+    const {
+      name,
+      formatted_address,
+      photos,
+      international_phone_number,
+      opening_hours,
+      website,
+    } = data.result;
+    return enrichPlace(favorite).then(infos => ({
+      name: name,
+      address: formatted_address,
+      photos: photos[0],
+      phone: international_phone_number,
+      opening_hours: opening_hours,
+      website: website,
+      infos: infos,
+    }))
+  } ))
+  */
 router.get("/", isLoggedIn, async (req, res, next) => {
   const favorites = req.user.favorites.map(async (favorite) => {
     const { data } = await axios.get(
