@@ -28,23 +28,23 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
       endpoint = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&keyword=${search}&radius=5000&key=${key}`;
     }
     const { data } = await axios.get(endpoint);
-
+    console.log(data);
     const returnedData = data.results.map(async (item) => {
       const {
         name,
+        place_id,
         formatted_address,
-        photos,
         international_phone_number,
         opening_hours,
         website,
       } = item;
 
-      const infos = await enrichPlace(item.place_id);
+      const infos = await enrichPlace(place_id);
 
       return {
         name: name,
+        place_id: place_id,
         address: formatted_address,
-        photos: photos[0],
         phone: international_phone_number,
         opening_hours: opening_hours,
         website: website,
@@ -125,7 +125,6 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
     const {
       name,
       formatted_address,
-      photos,
       international_phone_number,
       opening_hours,
       website,
@@ -138,7 +137,6 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
     res.json({
       name: name,
       address: formatted_address,
-      photos: photos[0],
       phone: international_phone_number,
       opening_hours: opening_hours,
       website: website,
