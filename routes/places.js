@@ -21,11 +21,14 @@ const upload = multer({ storage });
 //search the places
 router.get("/search", isLoggedIn, async (req, res, next) => {
   try {
-    const query = req.query.search;
+    const { search, latitude, longitude } = req.query;
+    let endpoint = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${search}&key=${key}`;
 
-    const { data } = await axios.get(
-      `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${query}&key=${key}`
-    );
+    if (latitude !== undefined && longitude !== undefined) {
+      endpoint = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&keyword=${search}&radius=5000&key=${key}`;
+    }
+    const { data } = await axios.get(endpoint);
+
     const returnedData = data.results.map(async (item) => {
       const {
         name,
