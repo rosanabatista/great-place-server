@@ -124,24 +124,28 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
 
     const {
       name,
+      icon,
       formatted_address,
       international_phone_number,
       opening_hours,
       website,
+      place_id,
     } = data.result;
 
     const infos = await enrichPlace(id);
 
-    const comments = await Comment.find({ place_id: id });
+    const comments = await Comment.find({ place_id: id }).populate("author");
 
     res.json({
       name: name,
+      icon: icon,
       address: formatted_address,
       phone: international_phone_number,
       opening_hours: opening_hours,
       website: website,
       infos: infos,
       comments: comments,
+      place_id: place_id,
     });
   } catch (err) {
     next(err);
@@ -177,17 +181,21 @@ router.post("/:id", isLoggedIn, (req, res, next) => {
 router.post(
   "/:id/new-comment",
   isLoggedIn,
-  upload.single("comment-image"),
+  upload.single("picture"),
   (req, res, next) => {
-    console.log(req.file.path);
     const { body } = req.body;
+    const file = req.file;
+    let path = null;
+    if (file) {
+      path = file.path;
+    }
     Comment.create({
       body,
       place_id: req.params.id,
       author: req.user._id,
-      picture: req.file.path,
+      picture: path,
     }).then((newComment) => {
-      res.json({ message: "comment added" });
+      res.json({ message: "comment added", comment: newComment });
     });
   }
 );
