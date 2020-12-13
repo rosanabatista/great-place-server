@@ -21,11 +21,11 @@ const upload = multer({ storage });
 //search the places
 router.get("/search", isLoggedIn, async (req, res, next) => {
   try {
-    const { search, latitude, longitude } = req.query;
+    const { search, latitude, longitude, filters } = req.query;
     let endpoint = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${search}&key=${key}`;
 
     if (latitude !== undefined && longitude !== undefined) {
-      endpoint = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&keyword=${search}&radius=5000&key=${key}`;
+      endpoint = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&keyword=${search}&radius=10000&key=${key}`;
     }
     const { data } = await axios.get(endpoint);
     console.log(data);
@@ -40,6 +40,17 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
       } = item;
 
       const infos = await enrichPlace(place_id);
+      console.log(infos);
+      if (filters !== undefined && filters !== "") {
+        console.log(Object.keys(infos));
+        const available = Object.keys(infos).filter(
+          (key) => infos[key] === true
+        );
+        console.log(available);
+        if (!available.some((item) => filters.split(",").includes(item))) {
+          return;
+        }
+      }
 
       return {
         name: name,
@@ -52,7 +63,7 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
       };
     });
     Promise.all(returnedData).then((results) => {
-      res.json(results);
+      res.json(results.filter((item) => item !== undefined));
     });
   } catch (err) {
     next(err);
@@ -87,30 +98,7 @@ async function enrichPlace(place_id) {
       breastfeeding: false,
     };
   }
-  return ({
-    wheelchair_accessible,
-    wheelchair_bathroom,
-    braille_menu,
-    braille_signs,
-    large_menu,
-    wheelchair_table,
-    lights,
-    comfortable_colors,
-    noises,
-    working_lift,
-    decibels,
-    sign_language,
-    open_area,
-    changing_ladies,
-    changing_mens,
-    high_chair,
-    kids_menu,
-    play_area,
-    phone_charger,
-    parking,
-    strollers,
-    breastfeeding,
-  } = result);
+  return Object.assign({}, result._doc);
 }
 
 //get the single place
