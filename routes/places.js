@@ -25,7 +25,7 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
     let endpoint = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${search}&key=${key}`;
 
     if (latitude !== undefined && longitude !== undefined) {
-      endpoint = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&keyword=${search}&radius=10000&key=${key}`;
+      endpoint = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&keyword=${search}&radius=50000&key=${key}`;
     }
     const { data } = await axios.get(endpoint);
     console.log(data);
@@ -33,9 +33,10 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
       const {
         name,
         place_id,
+        icon,
         formatted_address,
+        vicinity,
         international_phone_number,
-        opening_hours,
         website,
       } = item;
 
@@ -51,13 +52,14 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
           return;
         }
       }
-
+      console.log(formatted_address);
       return {
         name: name,
+        icon: icon,
         place_id: place_id,
         address: formatted_address,
+        vicinity: vicinity,
         phone: international_phone_number,
-        opening_hours: opening_hours,
         website: website,
         infos: infos,
       };
@@ -84,7 +86,6 @@ async function enrichPlace(place_id) {
       comfortable_colors: false,
       noises: false,
       working_lift: false,
-      decibels: "",
       sign_language: false,
       open_area: false,
       changing_ladies: false,
@@ -115,7 +116,6 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
       icon,
       formatted_address,
       international_phone_number,
-      opening_hours,
       website,
       place_id,
     } = data.result;
@@ -129,7 +129,6 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
       icon: icon,
       address: formatted_address,
       phone: international_phone_number,
-      opening_hours: opening_hours,
       website: website,
       infos: infos,
       comments: comments,

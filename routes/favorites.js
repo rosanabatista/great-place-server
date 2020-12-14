@@ -85,11 +85,10 @@ router.get("/", isLoggedIn, async (req, res, next) => {
       `https://maps.googleapis.com/maps/api/place/details/json?place_id=${favorite}&key=${key}`
     );
     const {
+      place_id,
       name,
       formatted_address,
-      photos,
       international_phone_number,
-      opening_hours,
       website,
     } = data.result;
 
@@ -97,10 +96,9 @@ router.get("/", isLoggedIn, async (req, res, next) => {
 
     return {
       name: name,
+      place_id: place_id,
       address: formatted_address,
-      photos: photos[0],
       phone: international_phone_number,
-      opening_hours: opening_hours,
       website: website,
       infos: infos,
     };
@@ -112,7 +110,6 @@ router.get("/", isLoggedIn, async (req, res, next) => {
 
 router.post("/:id", isLoggedIn, (req, res, next) => {
   let favorites = req.user.favorites;
-  console.log(favorites);
   if (favorites.length < 5) {
     favorites.push(req.params.id);
     User.findByIdAndUpdate(req.user._id, {
