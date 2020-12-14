@@ -2,11 +2,11 @@ const isLoggedIn = require("../middlewares/isLoggedIn");
 const User = require("../models/User.model");
 const axios = require("axios");
 const key = process.env.GOOGLE_API_KEY;
-const Check = require("../models/CheckModel");
+const Place = require("../models/PlaceModel");
 const router = require("express").Router();
 
 async function enrichPlace(place_id) {
-  const result = await Check.findOne({ place_id: place_id });
+  const result = await Place.findOne({ place_id: place_id });
   if (!result) {
     return {
       wheelchair_accessible: false,
@@ -19,7 +19,6 @@ async function enrichPlace(place_id) {
       comfortable_colors: false,
       noises: false,
       working_lift: false,
-      decibels: "",
       sign_language: false,
       open_area: false,
       changing_ladies: false,
@@ -33,52 +32,9 @@ async function enrichPlace(place_id) {
       breastfeeding: false,
     };
   }
-  return ({
-    wheelchair_accessible,
-    wheelchair_bathroom,
-    braille_menu,
-    braille_signs,
-    large_menu,
-    wheelchair_table,
-    lights,
-    comfortable_colors,
-    noises,
-    working_lift,
-    decibels,
-    sign_language,
-    open_area,
-    changing_ladies,
-    changing_mens,
-    high_chair,
-    kids_menu,
-    play_area,
-    phone_charger,
-    parking,
-    strollers,
-    breastfeeding,
-  } = result);
+  return result.infos;
 }
-/*
-  map(favorites => axios.get( `https://maps.googleapis.com/maps/api/place/details/json?place_id=${favorite}&key=${key}`).then(({data}) =>{
-    const {
-      name,
-      formatted_address,
-      photos,
-      international_phone_number,
-      opening_hours,
-      website,
-    } = data.result;
-    return enrichPlace(favorite).then(infos => ({
-      name: name,
-      address: formatted_address,
-      photos: photos[0],
-      phone: international_phone_number,
-      opening_hours: opening_hours,
-      website: website,
-      infos: infos,
-    }))
-  } ))
-  */
+
 router.get("/", isLoggedIn, async (req, res, next) => {
   const favorites = req.user.favorites.map(async (favorite) => {
     const { data } = await axios.get(
@@ -101,6 +57,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
       phone: international_phone_number,
       website: website,
       infos: infos,
+      isFavorite: true,
     };
   });
   Promise.all(favorites).then((results) => {
@@ -110,29 +67,28 @@ router.get("/", isLoggedIn, async (req, res, next) => {
 
 router.post("/:id", isLoggedIn, (req, res, next) => {
   let favorites = req.user.favorites;
-  if (favorites.length < 5) {
-    favorites.push(req.params.id);
+  if (favorites.includes(req.params.id)) {
+    const indexOf = favorites.indexOf(req.params.id);
+    if (indexOf >= 0) {
+      favorites.splice(indexOf, 1);
+    }
     User.findByIdAndUpdate(req.user._id, {
       favorites: [...new Set(favorites)],
     }).then((result) => {
-      res.json({ message: "your favorite place was added" });
+      res.json({ message: "your favorite place was deleted" });
     });
   } else {
-    res.json({ message: "you can only add a maximum of 5 favorites" });
+    if (favorites.length < 5) {
+      favorites.push(req.params.id);
+      User.findByIdAndUpdate(req.user._id, {
+        favorites: [...new Set(favorites)],
+      }).then((result) => {
+        res.json({ message: "your favorite place was added" });
+      });
+    } else {
+      res.json({ message: "you can only add a maximum of 5 favorites" });
+    }
   }
-});
-
-router.delete("/:id", isLoggedIn, (req, res, next) => {
-  let favorites = req.user.favorites;
-  const indexOf = favorites.indexOf(req.params.id);
-  if (indexOf >= 0) {
-    favorites.splice(indexOf, 1);
-  }
-  User.findByIdAndUpdate(req.user._id, {
-    favorites: [...new Set(favorites)],
-  }).then((result) => {
-    res.json({ message: "your favorite place was deleted" });
-  });
 });
 
 module.exports = router;
