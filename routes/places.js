@@ -33,7 +33,13 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
       console.log(query);
       Place.find({ $or: query }).then((result) => {
         console.log(result);
-        res.json(result);
+        const results = result.map((item) => {
+          return Object.assign(
+            { isFavorite: req.user.favorites.includes(item.place_id) },
+            item._doc
+          );
+        });
+        res.json(results);
       });
     } else {
       let endpoint = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${search}&type=restaurant&key=${key}`;
@@ -164,7 +170,7 @@ router.post("/:id", isLoggedIn, async (req, res, next) => {
         infos: req.body,
         name,
         icon,
-        formatted_address,
+        address: formatted_address,
         international_phone_number,
         website,
       };
