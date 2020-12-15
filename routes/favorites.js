@@ -43,6 +43,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     const {
       place_id,
       name,
+      icon,
       formatted_address,
       international_phone_number,
       website,
@@ -53,6 +54,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     return {
       name: name,
       place_id: place_id,
+      icon: icon,
       address: formatted_address,
       phone: international_phone_number,
       website: website,
