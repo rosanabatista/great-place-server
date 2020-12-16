@@ -23,7 +23,10 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     } = data.result;
 
     const infos = await enrichPlace(favorite);
-    const picture = await getPhotos(photos[0].photo_reference);
+    let picture;
+    if (photos) {
+      picture = await getPhotos(photos[0].photo_reference);
+    }
 
     return {
       name: name,

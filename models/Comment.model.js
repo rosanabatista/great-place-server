@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const commentSchema = new mongoose.Schema({
   when: {
     type: Date,
@@ -16,6 +15,8 @@ const commentSchema = new mongoose.Schema({
   },
   picture: {
     type: String,
+    default:
+      "https://images.pexels.com/photos/4064080/pexels-photo-4064080.jpeg?cs=srgb&dl=pexels-marcus-aurelius-4064080.jpg&fm=jpg",
   },
 });
 

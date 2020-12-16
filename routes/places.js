@@ -59,8 +59,8 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
           photos,
         } = item;
 
-        let picture;
         const infos = await enrichPlace(place_id);
+        let picture;
         if (photos) {
           picture = await getPhotos(photos[0].photo_reference);
         }
@@ -107,7 +107,12 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
     } = data.result;
 
     const infos = await enrichPlace(id);
-    const picture = await getPhotos(photos[0].photo_reference);
+    let picture;
+    let photo;
+    if (photos) {
+      picture = await getPhotos(photos[0].photo_reference);
+      photo = photos[0].photo_reference;
+    }
 
     const comments = await Comment.find({ place_id: id }).populate("author");
 
@@ -122,6 +127,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
       place_id: place_id,
       isFavorite: req.user.favorites.includes(place_id),
       picture: picture,
+      photo: photo,
     });
   } catch (err) {
     next(err);
@@ -188,12 +194,15 @@ router.post(
     if (file) {
       path = file.path;
     }
-    Comment.create({
+    let payload = {
       body,
       place_id: req.params.id,
       author: req.user._id,
-      picture: path,
-    }).then((newComment) => {
+    };
+    if (path) {
+      payload["picture"] = path;
+    }
+    Comment.create(payload).then((newComment) => {
       res.json({
         message: "comment added",
         comment: newComment.populate("author"),
@@ -202,12 +211,12 @@ router.post(
   }
 );
 
-// router.get("/photos/:id", async (req, res, next) => {
-//   const result = await axios.get(
-//     `https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photoreference=${req.params.id}&key=${key}`
-//   );
-//   console.log(result.request.getHeader("Content-Type"));
-//   res.send(result.data);
-// });
+router.get("/photos/:id", async (req, res, next) => {
+  const result = await axios.get(
+    `https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photoreference=${req.params.id}&key=${key}`
+  );
+  res.set(result.headers);
+  res.send(Buffer.from(result.data));
+});
 
 module.exports = router;
