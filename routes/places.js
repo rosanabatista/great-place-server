@@ -30,9 +30,7 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
       filters.split(",").forEach((filter) => {
         query.push({ [`infos.${filter}`]: true });
       });
-      console.log(query);
       Place.find({ $or: query }).then((result) => {
-        console.log(result);
         const results = result.map((item) => {
           return Object.assign(
             { isFavorite: req.user.favorites.includes(item.place_id) },
@@ -110,7 +108,17 @@ async function enrichPlace(place_id) {
   }
   return result.infos;
 }
+async function getPhotos(photo_reference) {
+  const result = await axios.get(
+    `https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photoreference=${photo_reference}&key=${key}`
+  );
 
+  console.log(
+    `${result.request.protocol}${result.request.host}${result.request.path}`
+  );
+
+  return result.data;
+}
 //get the single place
 router.get("/:id", isLoggedIn, async (req, res, next) => {
   try {
@@ -127,9 +135,11 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
       international_phone_number,
       website,
       place_id,
+      photos,
     } = data.result;
 
     const infos = await enrichPlace(id);
+    const picture = await getPhotos(photos[0].photo_reference);
 
     const comments = await Comment.find({ place_id: id }).populate("author");
 
@@ -143,6 +153,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
       comments: comments,
       place_id: place_id,
       isFavorite: req.user.favorites.includes(place_id),
+      picture: picture,
     });
   } catch (err) {
     next(err);
@@ -185,13 +196,11 @@ router.post("/:id", isLoggedIn, async (req, res, next) => {
             res.json({ message: "you updated new infos" });
           })
           .catch((err) => {
-            console.log("error");
             res.json(err);
           });
       }
     })
     .catch((err) => {
-      console.log("error");
       res.json(err);
     });
 });
