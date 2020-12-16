@@ -6,6 +6,7 @@ const PlaceSchema = new mongoose.Schema({
   address: String,
   phone: String,
   website: String,
+  picture: String,
   infos: {
     wheelchair_accessible: {
       type: Boolean,

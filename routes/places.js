@@ -1,5 +1,6 @@
 const isLoggedIn = require("../middlewares/isLoggedIn");
-
+const enrichPlace = require("../utils/enrichPlaces");
+const getPhotos = require("../utils/getPhotos");
 const router = require("express").Router();
 
 const key = process.env.GOOGLE_API_KEY;
@@ -55,9 +56,15 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
           vicinity,
           international_phone_number,
           website,
+          photos,
         } = item;
 
+        let picture;
         const infos = await enrichPlace(place_id);
+        if (photos) {
+          picture = await getPhotos(photos[0].photo_reference);
+        }
+
         return {
           name: name,
           icon: icon,
@@ -68,6 +75,7 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
           website: website,
           infos: infos,
           isFavorite: req.user.favorites.includes(place_id),
+          picture: picture,
         };
       });
       Promise.all(returnedData).then((results) => {
@@ -79,46 +87,6 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
   }
 });
 
-async function enrichPlace(place_id) {
-  const result = await Place.findOne({ place_id: place_id });
-  if (!result) {
-    return {
-      wheelchair_accessible: false,
-      wheelchair_bathroom: false,
-      braille_menu: false,
-      braille_signs: false,
-      large_menu: false,
-      wheelchair_table: false,
-      lights: false,
-      comfortable_colors: false,
-      noises: false,
-      working_lift: false,
-      sign_language: false,
-      open_area: false,
-      changing_ladies: false,
-      changing_mens: false,
-      high_chair: false,
-      kids_menu: false,
-      play_area: false,
-      phone_charger: false,
-      parking: false,
-      strollers: false,
-      breastfeeding: false,
-    };
-  }
-  return result.infos;
-}
-async function getPhotos(photo_reference) {
-  const result = await axios.get(
-    `https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photoreference=${photo_reference}&key=${key}`
-  );
-
-  console.log(
-    `${result.request.protocol}${result.request.host}${result.request.path}`
-  );
-
-  return result.data;
-}
 //get the single place
 router.get("/:id", isLoggedIn, async (req, res, next) => {
   try {
@@ -172,7 +140,9 @@ router.post("/:id", isLoggedIn, async (req, res, next) => {
     formatted_address,
     international_phone_number,
     website,
+    photos,
   } = data.result;
+  const picture = await getPhotos(photos[0].photo_reference);
 
   Place.findOne({ place_id: req.params.id })
     .then((result) => {
@@ -184,6 +154,7 @@ router.post("/:id", isLoggedIn, async (req, res, next) => {
         address: formatted_address,
         international_phone_number,
         website,
+        picture,
       };
 
       //if there is no info about this place
@@ -230,5 +201,13 @@ router.post(
     });
   }
 );
+
+// router.get("/photos/:id", async (req, res, next) => {
+//   const result = await axios.get(
+//     `https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photoreference=${req.params.id}&key=${key}`
+//   );
+//   console.log(result.request.getHeader("Content-Type"));
+//   res.send(result.data);
+// });
 
 module.exports = router;
