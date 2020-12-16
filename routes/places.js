@@ -214,7 +214,10 @@ router.post(
       author: req.user._id,
       picture: path,
     }).then((newComment) => {
-      res.json({ message: "comment added", comment: newComment });
+      res.json({
+        message: "comment added",
+        comment: newComment.populate("author"),
+      });
     });
   }
 );
