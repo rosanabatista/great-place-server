@@ -26,6 +26,9 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     let picture;
     if (photos) {
       picture = await getPhotos(photos[0].photo_reference);
+    } else {
+      picture =
+        "https://upload.wikimedia.org/wikipedia/commons/b/be/KeizersgrachtReguliersgrachtAmsterdam.jpg";
     }
 
     return {

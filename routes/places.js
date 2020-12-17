@@ -63,6 +63,9 @@ router.get("/search", isLoggedIn, async (req, res, next) => {
         let picture;
         if (photos) {
           picture = await getPhotos(photos[0].photo_reference);
+        } else {
+          picture =
+            "https://upload.wikimedia.org/wikipedia/commons/b/be/KeizersgrachtReguliersgrachtAmsterdam.jpg";
         }
 
         return {
@@ -108,10 +111,11 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
 
     const infos = await enrichPlace(id);
     let picture;
-    let photo;
     if (photos) {
       picture = await getPhotos(photos[0].photo_reference);
-      photo = photos[0].photo_reference;
+    } else {
+      picture =
+        "https://upload.wikimedia.org/wikipedia/commons/b/be/KeizersgrachtReguliersgrachtAmsterdam.jpg";
     }
 
     const comments = await Comment.find({ place_id: id }).populate("author");
@@ -127,7 +131,6 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
       place_id: place_id,
       isFavorite: req.user.favorites.includes(place_id),
       picture: picture,
-      photo: photo,
     });
   } catch (err) {
     next(err);
@@ -148,7 +151,13 @@ router.post("/:id", isLoggedIn, async (req, res, next) => {
     website,
     photos,
   } = data.result;
-  const picture = await getPhotos(photos[0].photo_reference);
+  let picture;
+  if (photos) {
+    picture = await getPhotos(photos[0].photo_reference);
+  } else {
+    picture =
+      "https://upload.wikimedia.org/wikipedia/commons/b/be/KeizersgrachtReguliersgrachtAmsterdam.jpg";
+  }
 
   Place.findOne({ place_id: req.params.id })
     .then((result) => {
@@ -210,13 +219,5 @@ router.post(
     });
   }
 );
-
-router.get("/photos/:id", async (req, res, next) => {
-  const result = await axios.get(
-    `https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photoreference=${req.params.id}&key=${key}`
-  );
-  res.set(result.headers);
-  res.send(Buffer.from(result.data));
-});
 
 module.exports = router;
