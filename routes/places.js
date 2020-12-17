@@ -212,10 +212,15 @@ router.post(
       payload["picture"] = path;
     }
     Comment.create(payload).then((newComment) => {
-      res.json({
-        message: "comment added",
-        comment: newComment.populate("author"),
-      });
+      newComment
+        .populate("author")
+        .execPopulate()
+        .then((comment) => {
+          res.json({
+            message: "comment added",
+            comment: comment,
+          });
+        });
     });
   }
 );
